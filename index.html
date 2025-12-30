@@ -2,6 +2,8 @@
 <html lang="vi">
   <head>
     <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
     <title>Đọc truyện</title>
     <style>
       body {
@@ -46,28 +48,33 @@
       button:active {
         background-color: #555;
       }
+      html {
+        font-size: 16px;
+      }
+
+      #content {
+        font-size: 1.4rem; /* ~22px */
+        line-height: 1.9;
+      }
+
       @media (max-width: 768px) {
+        html {
+          font-size: 18px;
+        }
+
         #content {
-          font-size: 36px; /* TO HƠN */
-          line-height: 3.0; /* thoáng, dễ đọc */
-          padding: 18px;
-        }
-
-        h2 {
-          font-size: 24px;
-        }
-
-        button {
-          font-size: 20px;
-          padding: 14px 22px;
+          font-size: 1.6rem; /* ~29px */
+          line-height: 2.2;
         }
       }
 
-      /* 📱 MOBILE NHỎ (Android nhỏ, iPhone SE) */
       @media (max-width: 480px) {
+        html {
+          font-size: 19px;
+        }
+
         #content {
-          font-size: 36px; /* RẤT TO */
-          line-height: 3.0;
+          font-size: 1.7rem; /* ~32px */
         }
       }
     </style>
