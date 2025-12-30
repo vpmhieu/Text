@@ -73,65 +73,95 @@
     <button id="nextBtn">Kế tiếp</button>
 
     <script>
-      // ===== 1. LẤY PARAM TỪ URL =====
       const params = new URLSearchParams(window.location.search);
 
       let tentruyen = params.get("tentruyen") || "khauvantiendao";
-      let folder = parseInt(params.get("folder")) || 1; // chương
-      let chapter = parseInt(params.get("chapter")) || 1; // tập (file)
+      let folder = parseInt(params.get("folder")) || 1;
+      let chapter = parseInt(params.get("chapter")) || 1;
+      let sochuong = params.get("sochuong") === "1"; // true / false
 
-      // ===== 2. TÍNH FILE KẾ TIẾP =====
-      function getNext(folder, chapter) {
-        if (chapter >= 1 && chapter <= 98) {
-          return { folder, chapter: chapter + 1 };
-        }
-        if (chapter === 99) {
-          return { folder, chapter: 0 };
-        }
-        // chapter === 0
-        return { folder: folder + 1, chapter: 1 };
+      const contentEl = document.getElementById("content");
+      const titleEl = document.getElementById("title");
+
+      function normalizeFile(n) {
+        return n % 100 === 0 ? 0 : n;
       }
 
-      // ===== 3. LOAD FILE TXT =====
-      function loadContent() {
-        const path = `truyenfree/${tentruyen}/${folder}/${chapter}.txt`;
-
-        fetch(path)
-          .then((res) => {
-            if (!res.ok) throw new Error("404");
-            return res.text();
-          })
-          .then((text) => {
-            document.getElementById(
-              "title"
-            ).innerText = `Truyện: ${tentruyen} – Chương ${folder} – Tập ${chapter}`;
-            document.getElementById("content").innerText = text;
-            updateURL();
-          })
-          .catch(() => {
-            document.getElementById("content").innerText =
-              "❌ Không tìm thấy nội dung";
-          });
+      async function loadSingle(folder, file) {
+        const path = `truyenfree/${tentruyen}/${folder}/${file}.txt`;
+        const res = await fetch(path);
+        if (!res.ok) throw new Error("404");
+        return res.text();
       }
 
-      // ===== 4. CẬP NHẬT URL (KHÔNG RELOAD) =====
+      async function loadContent() {
+        contentEl.innerText = "Đang tải...";
+
+        try {
+          let text = "";
+
+          if (!sochuong) {
+            // ===== CHẾ ĐỘ CŨ: 1 FILE =====
+            const file = normalizeFile(chapter);
+            text = await loadSingle(folder, file);
+          } else {
+            // ===== CHẾ ĐỘ 4 FILE =====
+            const startIndex = (chapter - 1) * 4 + 1;
+
+            for (let i = 0; i < 4; i++) {
+              const rawIndex = startIndex + i;
+              const file = normalizeFile(rawIndex);
+
+              const t = await loadSingle(folder, file);
+              text += `\n\n${t}`;
+            }
+          }
+
+          titleEl.innerText =
+            `Truyện: ${tentruyen} – Chương ${folder} – Tập ${chapter}` +
+            (sochuong ? " (4 tập)" : "");
+
+          contentEl.innerText = text.trim();
+          updateURL();
+        } catch (e) {
+          contentEl.innerText = "❌ Không tìm thấy nội dung";
+        }
+      }
+
       function updateURL() {
-        history.replaceState(
-          {},
-          "",
-          `?tentruyen=${tentruyen}&folder=${folder}&chapter=${chapter}`
-        );
+        let url = `?tentruyen=${tentruyen}&folder=${folder}&chapter=${chapter}`;
+        if (sochuong) url += "&sochuong=1";
+
+        history.replaceState({}, "", url);
       }
 
-      // ===== 5. NÚT KẾ TIẾP =====
-      document.getElementById("nextBtn").onclick = () => {
-        const next = getNext(folder, chapter);
-        folder = next.folder;
-        chapter = next.chapter;
-        loadContent();
-      };
+      function nextPage() {
+        if (!sochuong) {
+          // ===== MODE 1 FILE =====
+          if (chapter >= 1 && chapter <= 98) chapter++;
+          else if (chapter === 99) chapter = 0;
+          else {
+            folder++;
+            chapter = 1;
+          }
+        } else {
+          // ===== MODE 4 FILE =====
+          const startIndex = (chapter - 1) * 4 + 1;
+          const nextStart = startIndex + 4;
 
-      // ===== 6. LOAD BAN ĐẦU =====
+          if (nextStart > 100) {
+            folder++;
+            chapter = 1;
+          } else {
+            chapter++;
+          }
+        }
+
+        loadContent();
+      }
+
+      document.getElementById("nextBtn").onclick = nextPage;
+
       loadContent();
     </script>
   </body>
